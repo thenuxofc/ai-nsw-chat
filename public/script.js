@@ -1,3 +1,4 @@
+
 // Global State
 let characters = [];
 let activeCharacter = null;
@@ -522,8 +523,16 @@ function copyToClipboard(text, msg = 'Copied to clipboard!') {
 function showToast(msg) {
   const toast = document.getElementById('toast');
   if (!toast) return;
-  toast.textContent = msg;
+  const textEl = document.getElementById('toast-text');
+  if (textEl) textEl.textContent = msg;
+  else toast.textContent = msg;
   toast.classList.add('show');
+  
+  // Haptic feedback if supported
+  if ('vibrate' in navigator) {
+    try { navigator.vibrate(12); } catch (e) {}
+  }
+  
   setTimeout(() => toast.classList.remove('show'), 2600);
 }
 
@@ -540,4 +549,12 @@ function initEventListeners() {
       this.style.height = Math.min(this.scrollHeight, 120) + 'px';
     });
   }
+
+  // Apple tactile button press feedback
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.apple-btn, .segmented-btn, .apple-chip, .sidebar-char-item, .apple-send-btn');
+    if (btn && 'vibrate' in navigator) {
+      try { navigator.vibrate(10); } catch (err) {}
+    }
+  });
 }
