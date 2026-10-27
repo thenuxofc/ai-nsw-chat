@@ -12,10 +12,14 @@
   to = "/.netlify/functions/characters"
   status = 200
 
+[[redirects]]
+  from = "/api/image"
+  to = "/.netlify/functions/image"
+  status = 200
+
 [[headers]]
   for = "/api/*"
   [headers.values]
     Access-Control-Allow-Origin = "*"
     Access-Control-Allow-Methods = "GET, POST, OPTIONS"
     Access-Control-Allow-Headers = "Content-Type, Authorization, x-local-id"
-

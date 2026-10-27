@@ -1,3 +1,4 @@
+
 :root {
   --bg-main: #0a0c14;
   --bg-surface: #121524;
@@ -1288,3 +1289,185 @@ pre {
     text-align: center;
   }
 }
+
+.close-btn:hover {
+  color: #fff;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.modal-sub {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.modal-footer {
+  padding: 12px 20px;
+  background: rgba(0, 0, 0, 0.2);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* ------------------------------------------------------ */
+/* TOAST NOTIFICATION                                     */
+/* ------------------------------------------------------ */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: #1e293b;
+  color: #fff;
+  border: 1px solid #334155;
+  padding: 10px 18px;
+  border-radius: var(--radius-pill);
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  transform: translateY(100px);
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 200;
+  pointer-events: none;
+}
+
+.toast.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* ------------------------------------------------------ */
+/* KEYFRAME ANIMATIONS                                    */
+/* ------------------------------------------------------ */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { filter: drop-shadow(0 0 6px var(--primary-glow)); }
+  50% { filter: drop-shadow(0 0 14px var(--primary)); }
+}
+
+@keyframes pulseStatus {
+  0%, 100% { box-shadow: 0 0 4px var(--green); }
+  50% { box-shadow: 0 0 10px var(--green); }
+}
+
+@keyframes dotBounce {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40% { transform: scale(1.1); opacity: 1; }
+}
+
+/* ------------------------------------------------------ */
+/* RESPONSIVE LAYOUT (LAPTOP VS MOBILE)                   */
+/* ------------------------------------------------------ */
+.mobile-only {
+  display: none !important;
+}
+
+@media (max-width: 860px) {
+  .desktop-only {
+    display: none !important;
+  }
+
+  .mobile-only {
+    display: block !important;
+  }
+
+  .navbar {
+    padding: 0 12px;
+  }
+
+  .brand-title {
+    font-size: 1rem;
+  }
+
+  .nav-tab {
+    padding: 6px 10px;
+    font-size: 0.78rem;
+  }
+
+  .nav-tab .tab-icon {
+    font-size: 0.9rem;
+  }
+
+  .chat-dashboard {
+    flex-direction: column;
+  }
+
+  .chat-stage-header {
+    padding: 10px 14px;
+  }
+
+  .avatar-wrapper {
+    width: 42px;
+    height: 42px;
+  }
+
+  .char-meta h2 {
+    font-size: 1rem;
+  }
+
+  .char-tagline {
+    max-width: 200px;
+    font-size: 0.75rem;
+  }
+
+  .mobile-char-select-btn select {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    border-radius: var(--radius-pill);
+    background: var(--bg-surface-elevated);
+    border-color: var(--primary);
+  }
+
+  .chat-messages-scroll {
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  .chat-bubble-row {
+    max-width: 92%;
+  }
+
+  .bubble-body {
+    padding: 10px 14px;
+    font-size: 0.9rem;
+  }
+
+  .quick-chips-row {
+    padding: 6px 14px;
+  }
+
+  .chat-input-bar {
+    padding: 10px 14px 14px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-group.full-span {
+    grid-column: span 1;
+  }
+
+  .container-narrow {
+    padding: 20px 14px 60px;
+  }
+
+  .toast {
+    right: 14px;
+    left: 14px;
+    text-align: center;
+  }
+}
+

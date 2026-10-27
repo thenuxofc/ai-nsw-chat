@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const chatFunction = require('./netlify/functions/chat');
 const charactersFunction = require('./netlify/functions/characters');
+const imageFunction = require('./netlify/functions/image');
 
 const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = path.join(__dirname, 'public');
@@ -68,6 +69,26 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // API: /api/image
+  if (pathname === '/api/image') {
+    const event = {
+      httpMethod: req.method,
+      queryStringParameters,
+      headers: req.headers
+    };
+
+    const response = await imageFunction.handler(event);
+    if (response.isBase64Encoded) {
+      const buffer = Buffer.from(response.body, 'base64');
+      res.writeHead(response.statusCode, response.headers || {});
+      res.end(buffer);
+    } else {
+      res.writeHead(response.statusCode, response.headers || {});
+      res.end(response.body);
+    }
+    return;
+  }
+
   // Serve static files from /public
   let filePath = path.join(PUBLIC_DIR, pathname === '/' ? 'index.html' : pathname);
   
@@ -88,4 +109,3 @@ server.listen(PORT, () => {
   console.log(`Try GET API: http://localhost:${PORT}/api/chat?prompt=hello&character=Kohana`);
   console.log(`Try Characters API: http://localhost:${PORT}/api/characters`);
 });
-

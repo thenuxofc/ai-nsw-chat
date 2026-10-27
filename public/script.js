@@ -5,6 +5,16 @@ let currentSessionId = '';
 let messageHistory = [];
 let isGenerating = false;
 
+// Proxy CDN image URLs to bypass 403 Forbidden hotlink blocks
+function formatAvatarUrl(url) {
+  if (!url) return 'https://api.dicebear.com/7.x/bottts/svg?seed=Companion';
+  if (url.startsWith('/api/image')) return url;
+  if (url.includes('b-cdn.net') || url.includes('nsfwlover.com')) {
+    return `/api/image?url=${encodeURIComponent(url)}`;
+  }
+  return url;
+}
+
 // Initialize on DOM load
 document.addEventListener('DOMContentLoaded', async () => {
   await loadCharacters();
@@ -87,7 +97,7 @@ function renderSidebarList() {
     item.onclick = () => selectCharacter(c.id);
 
     item.innerHTML = `
-      <img class="sidebar-char-avatar" src="${c.avatar}" alt="${c.name}" onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=${c.name}'">
+      <img class="sidebar-char-avatar" src="${formatAvatarUrl(c.avatar)}" alt="${c.name}" onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(c.name)}'">
       <div class="sidebar-char-info">
         <div class="sidebar-char-name">${c.name}</div>
         <div class="sidebar-char-tagline">${c.description}</div>
@@ -134,7 +144,7 @@ function renderGallery() {
     card.className = 'gallery-card';
     card.innerHTML = `
       <div class="gallery-media">
-        <img src="${c.avatar}" alt="${c.name}" onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=${c.name}'">
+        <img src="${formatAvatarUrl(c.avatar)}" alt="${c.name}" onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(c.name)}'">
       </div>
       <div class="gallery-body">
         <div class="gallery-name-row">
@@ -162,7 +172,7 @@ async function selectCharacter(charId, resetHistory = true) {
   document.getElementById('chat-active-name').textContent = char.name;
   document.getElementById('chat-active-desc').textContent = char.description;
   document.getElementById('chat-active-creator').textContent = `by ${char.creator || 'Community'}`;
-  document.getElementById('chat-active-avatar').src = char.avatar;
+  document.getElementById('chat-active-avatar').src = formatAvatarUrl(char.avatar);
   document.getElementById('typing-char-name').textContent = char.name;
 
   // Update dynamic favicon
@@ -278,7 +288,7 @@ function renderChatMessages() {
     row.className = `chat-bubble-row ${isAssistant ? 'companion' : 'user'}`;
 
     const avatarUrl = isAssistant
-      ? activeCharacter.avatar
+      ? formatAvatarUrl(activeCharacter.avatar)
       : 'https://api.dicebear.com/7.x/identicon/svg?seed=Guest';
 
     const authorName = isAssistant ? activeCharacter.name : 'You';
