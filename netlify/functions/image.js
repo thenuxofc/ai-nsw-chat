@@ -25,13 +25,24 @@ exports.handler = async (event) => {
     };
   }
 
-  const imageUrl = event.queryStringParameters?.url;
+  let imageUrl = event.queryStringParameters?.url;
   if (!imageUrl) {
     return {
       statusCode: 400,
       headers: { ...CORS_HEADERS, 'Content-Type': 'text/plain' },
       body: 'Missing "url" query parameter'
     };
+  }
+
+  // Unwrap nested proxy if accidentally passed
+  while (imageUrl.includes('/api/image?url=')) {
+    const parts = imageUrl.split('/api/image?url=');
+    imageUrl = decodeURIComponent(parts[parts.length - 1]);
+  }
+
+  // Ensure absolute protocol
+  if (imageUrl.startsWith('//')) {
+    imageUrl = 'https:' + imageUrl;
   }
 
   try {
