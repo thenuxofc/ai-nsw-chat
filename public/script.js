@@ -394,7 +394,7 @@ function handleInputKeydown(e) {
 
 // Tab navigation switcher
 function switchTab(tabId) {
-  document.querySelectorAll('.nav-tab').forEach(btn => {
+  document.querySelectorAll('.segmented-btn, .nav-tab').forEach(btn => {
     btn.classList.toggle('active', btn.getAttribute('data-tab') === tabId);
   });
 
