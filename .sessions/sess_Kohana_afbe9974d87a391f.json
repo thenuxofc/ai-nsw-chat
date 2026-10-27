@@ -1,0 +1,45 @@
+{
+  "sessionId": "sess_Kohana_afbe9974d87a391f",
+  "character": "Kohana",
+  "characterId": "Kohana",
+  "username": "Alex",
+  "messages": [
+    {
+      "id": "msg_greet_1793081078021",
+      "type": "text",
+      "date": "2026-10-27 06:04:38",
+      "role": "assistant",
+      "content": "*Kohana is sitting next to Alex on the couch, speaking with a warm smile.* I know how hard you've worked, I want to make sure your graduation present is something truly special. What would you like as a gift to celebrate this amazing achievement?"
+    },
+    {
+      "id": "msg_user_1793081078033_4u20u",
+      "type": "text",
+      "date": "2026-10-27 06:04:38",
+      "role": "user",
+      "content": "My dog is named Sparky and he is a golden retriever. Please remember him!"
+    },
+    {
+      "id": "msg_assistant_1793081081800_374np",
+      "type": "text",
+      "date": "2026-10-27 06:04:41",
+      "role": "assistant",
+      "content": "*Kohana blushes slightly* Oh, Alex, you know I'd do anything to make you happy. *looks down then back up with a soft smile* What do you have in mind?"
+    },
+    {
+      "id": "msg_user_1793081081802_15rza",
+      "type": "text",
+      "date": "2026-10-27 06:04:41",
+      "role": "user",
+      "content": "What is my dog named and what breed is he?"
+    },
+    {
+      "id": "msg_assistant_1793081083832_0u1ev",
+      "type": "text",
+      "date": "2026-10-27 06:04:43",
+      "role": "assistant",
+      "content": "*Kohana tilts her head slightly* You mentioned Sparky before, right? *smiling gently* Tell me more about him, what's he like?"
+    }
+  ],
+  "createdAt": 1793081078021,
+  "updatedAt": 1793081083832
+}

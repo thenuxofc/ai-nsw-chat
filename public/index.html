@@ -1,24 +1,25 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Girl Chat - Free REST GET API</title>
+  <title>AI Girl Chat - Free REST GET API with Memory</title>
   <link rel="stylesheet" href="style.css">
   <link rel="icon" href="https://loveimages.b-cdn.net/characters/Kohana/icon/f13acc8052570b13217e33537415f121888e41b9eddba937efd2bfff1b7254b1.jpg">
 </head>
 <body>
   <div class="container">
     <header class="header">
-      <div class="logo-badge">🔥 NSFWLover Unofficial REST API</div>
+      <div class="logo-badge">🔥 NSFWLover Unofficial REST API • With Persistent Memory</div>
       <h1>AI Girl Chat API</h1>
-      <p class="subtitle">A fast, free GET & POST REST API for AI companions. Deployable on Netlify & GitHub with zero configuration.</p>
+      <p class="subtitle">A fast, free GET & POST REST API for AI companions with full conversation memory. Deployable on Netlify & GitHub.</p>
       
       <div class="quick-links">
         <a href="#tester" class="btn btn-primary">Live API Tester</a>
         <a href="#characters" class="btn btn-outline">Browse Characters</a>
-        <a href="#docs" class="btn btn-outline">API Docs</a>
-        <a href="https://github.com" target="_blank" class="btn btn-github">Deploy to Netlify</a>
+        <a href="#memory-docs" class="btn btn-outline">Memory Docs</a>
+        <a href="#docs" class="btn btn-outline">Full Docs</a>
       </div>
     </header>
 
@@ -26,15 +27,23 @@
     <div class="hero-api-box">
       <div class="api-box-header">
         <span class="badge get">GET</span>
-        <code id="quick-url">/api/chat?prompt=hello&character=Kohana</code>
+        <code id="quick-url">/api/chat?prompt=hello&character=Kohana&session_id=...</code>
         <button id="copy-quick-url" class="btn-copy" onclick="copyText('/api/chat?prompt=hello&character=Kohana')">Copy</button>
       </div>
     </div>
 
     <!-- Live Interactive Tester -->
     <section id="tester" class="card">
-      <h2>⚡ Live GET API Tester</h2>
-      <p class="section-desc">Test the live GET API directly in your browser. Customize the parameters and watch the live response.</p>
+      <div class="section-header-row">
+        <div>
+          <h2>⚡ Live GET API Tester with Memory</h2>
+          <p class="section-desc">Each conversation has a persistent <code>session_id</code>. The AI remembers everything you say during the session!</p>
+        </div>
+        <div class="session-badge-box">
+          <span class="badge memory-badge">🧠 Memory Active</span>
+          <span id="memory-counter" class="msg-counter">1 message</span>
+        </div>
+      </div>
       
       <div class="tester-grid">
         <div class="tester-form">
@@ -52,27 +61,40 @@
             </select>
           </div>
 
+          <div class="form-row">
+            <div class="form-group half">
+              <label for="session-id-input">Session ID (Memory Key):</label>
+              <div class="input-with-button">
+                <input type="text" id="session-id-input" placeholder="Generating..." readonly>
+                <button type="button" class="btn-mini" onclick="resetSession()" title="Generate New Session ID">🔄 New</button>
+              </div>
+            </div>
+            <div class="form-group half">
+              <label for="username-input">Your Name:</label>
+              <input type="text" id="username-input" value="Guest" placeholder="Guest">
+            </div>
+          </div>
+
           <div class="form-group">
             <label for="prompt-input">Your Message / Prompt (GET query):</label>
-            <textarea id="prompt-input" rows="3" placeholder="Type what you want to say to her...">Hey Kohana! What are you doing today?</textarea>
+            <textarea id="prompt-input" rows="2" placeholder="Type what you want to say to her...">Hey Kohana! What are you doing today?</textarea>
           </div>
 
           <div class="form-row">
             <div class="form-group half">
-              <label for="username-input">Your Name (optional):</label>
-              <input type="text" id="username-input" value="Guest" placeholder="Guest">
-            </div>
-            <div class="form-group half">
-              <label for="format-select">Response Format:</label>
+              <label for="format-select">Format:</label>
               <select id="format-select">
-                <option value="json" selected>JSON (Full details)</option>
+                <option value="json" selected>JSON (Full response)</option>
                 <option value="text">Plain Text (Reply only)</option>
               </select>
+            </div>
+            <div class="form-group half flex-center">
+              <button type="button" class="btn btn-outline w-100" onclick="viewHistory()">📜 View History</button>
             </div>
           </div>
 
           <div class="url-preview">
-            <span class="url-label">Generated GET Endpoint:</span>
+            <span class="url-label">Live Generated GET URL:</span>
             <code id="full-url-preview">/api/chat?prompt=...</code>
           </div>
 
@@ -83,21 +105,57 @@
         </div>
 
         <div class="tester-preview">
-          <div class="char-preview-card" id="char-preview-card">
-            <img id="char-avatar" src="https://loveimages.b-cdn.net/characters/Kohana/icon/f13acc8052570b13217e33537415f121888e41b9eddba937efd2bfff1b7254b1.jpg" alt="Avatar">
-            <div class="char-preview-info">
-              <h3 id="char-name">Kohana</h3>
-              <p id="char-desc">Your stepmom, a people-pleaser type, is wondering what would you like as graduation present.</p>
+          <!-- Chat Log Box -->
+          <div class="chat-container">
+            <div class="char-preview-card" id="char-preview-card">
+              <img id="char-avatar" src="https://loveimages.b-cdn.net/characters/Kohana/icon/f13acc8052570b13217e33537415f121888e41b9eddba937efd2bfff1b7254b1.jpg" alt="Avatar">
+              <div class="char-preview-info">
+                <h3 id="char-name">Kohana</h3>
+                <p id="char-desc">Your stepmom, a people-pleaser type, is wondering what would you like as graduation present.</p>
+              </div>
+            </div>
+
+            <div class="chat-messages" id="chat-messages">
+              <!-- Dynamically populated -->
             </div>
           </div>
 
           <div class="response-container">
             <div class="response-header">
-              <span>Response:</span>
+              <span>Raw API Response:</span>
               <span id="response-time" class="response-status">Ready</span>
             </div>
             <pre id="response-output">Click "Send GET Request" to test...</pre>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Memory Guide Section -->
+    <section id="memory-docs" class="card">
+      <h2>🧠 How Memory & Session Generation Works</h2>
+      <p class="section-desc">The API provides continuous conversation memory across multiple messages using <code>session_id</code>.</p>
+      
+      <div class="memory-steps-grid">
+        <div class="memory-step">
+          <div class="step-num">1</div>
+          <h3>Generate a Session ID</h3>
+          <p>Request a fresh session ID with initial character greeting:</p>
+          <pre><code>GET /api/chat?action=new_session&character=Kohana</code></pre>
+        </div>
+
+        <div class="memory-step">
+          <div class="step-num">2</div>
+          <h3>Chat with Memory</h3>
+          <p>Include <code>session_id</code> in your subsequent GET requests:</p>
+          <pre><code>GET /api/chat?prompt=My+name+is+John&session_id=sess_Kohana_1234</code></pre>
+        </div>
+
+        <div class="memory-step">
+          <div class="step-num">3</div>
+          <h3>AI Remembers Everything</h3>
+          <p>Follow up with any question relying on past messages:</p>
+          <pre><code>GET /api/chat?prompt=What+is+my+name?&session_id=sess_Kohana_1234</code></pre>
         </div>
       </div>
     </section>
@@ -108,20 +166,18 @@
       <p class="section-desc">You can chat with any of these characters using the <code>character</code> query parameter:</p>
       
       <div id="characters-grid" class="character-grid">
-        <!-- Rendered by script.js -->
         <div class="loading">Loading characters...</div>
       </div>
     </section>
 
     <!-- Documentation -->
     <section id="docs" class="card">
-      <h2>📖 API Documentation</h2>
+      <h2>📖 API Endpoints Reference</h2>
       
-      <h3>1. Chat Endpoint (GET)</h3>
+      <h3>1. Chat Endpoint with Memory (GET)</h3>
       <div class="endpoint-block">
-        <span class="badge get">GET</span> <code>/api/chat</code>
+        <span class="badge get">GET</span> <code>/api/chat?prompt={message}&character={name}&session_id={id}</code>
       </div>
-      <p>Use this endpoint to chat with any character with a simple GET URL.</p>
 
       <h4>Query Parameters:</h4>
       <table class="params-table">
@@ -137,20 +193,31 @@
           <tr>
             <td><code>prompt</code></td>
             <td>string</td>
-            <td>Yes</td>
-            <td>The message you want to send. Aliases: <code>text</code>, <code>message</code>, <code>q</code>.</td>
+            <td>Yes (for chat)</td>
+            <td>The message to send. Aliases: <code>text</code>, <code>message</code>, <code>q</code>.</td>
           </tr>
           <tr>
             <td><code>character</code></td>
             <td>string</td>
             <td>No</td>
-            <td>Name or slug of the character (e.g. <code>Kohana</code>, <code>Linda</code>, <code>Sarah Wood</code>). Default: <code>Kohana</code>.</td>
+            <td>Character name (e.g. <code>Kohana</code>, <code>Linda</code>, <code>Sarah Wood</code>). Default: <code>Kohana</code>.</td>
           </tr>
           <tr>
             <td><code>session_id</code></td>
             <td>string</td>
             <td>No</td>
-            <td>Optional session ID to maintain continuous context. Auto-generated if omitted.</td>
+            <td>Session ID for memory. If not provided, a new one is auto-generated and returned.</td>
+          </tr>
+          <tr>
+            <td><code>action</code></td>
+            <td>string</td>
+            <td>No</td>
+            <td>
+              Special actions:
+              <br>• <code>new_session</code>: Creates a new session ID with character greeting.
+              <br>• <code>history</code>: Returns all stored messages for a <code>session_id</code>.
+              <br>• <code>clear</code>: Clears memory for a <code>session_id</code>.
+            </td>
           </tr>
           <tr>
             <td><code>username</code></td>
@@ -162,54 +229,33 @@
             <td><code>format</code></td>
             <td>string</td>
             <td>No</td>
-            <td><code>json</code> (default) or <code>text</code> (returns just the AI reply string).</td>
+            <td><code>json</code> (default) or <code>text</code> (raw reply string only).</td>
           </tr>
         </tbody>
       </table>
 
-      <h4>Example JSON Response:</h4>
+      <h3>2. Generate Session Endpoint (GET)</h3>
+      <div class="endpoint-block">
+        <span class="badge get">GET</span> <code>/api/chat?action=new_session&character=Kohana</code>
+      </div>
       <pre><code>{
   "status": "success",
+  "action": "new_session_created",
+  "session_id": "sess_Kohana_afbe9974d87a391f",
   "character": "Kohana",
-  "character_id": "Kohana",
-  "prompt": "Hello!",
-  "reply": "*Kohana looks at you with a gentle smile* Hello sweetie, what are you up to today?",
-  "session_id": "sess_d9603934ac11c758b41c",
-  "avatar": "https://loveimages.b-cdn.net/characters/Kohana/icon/f13acc8052570b13217e33537415f121888e41b9eddba937efd2bfff1b7254b1.jpg",
-  "model": "mistralai/mistral-nemo",
-  "created": 1793080587
+  "greeting": "*Kohana is sitting next to Guest on the couch...*",
+  "message_count": 1,
+  "created_at": 1793080600
 }</code></pre>
 
-      <h3>2. List Characters Endpoint (GET)</h3>
+      <h3>3. View Memory History (GET)</h3>
+      <div class="endpoint-block">
+        <span class="badge get">GET</span> <code>/api/chat?action=history&session_id=sess_Kohana_afbe9974d87a391f</code>
+      </div>
+
+      <h3>4. List Characters (GET)</h3>
       <div class="endpoint-block">
         <span class="badge get">GET</span> <code>/api/characters</code>
-      </div>
-      <p>Returns a complete list of all characters with avatars, descriptions, tags, and greetings.</p>
-
-      <h3>3. Integration Code Examples</h3>
-      <div class="tabs">
-        <div class="tab-content">
-          <h4>cURL</h4>
-          <pre><code># GET Request
-curl "https://your-site.netlify.app/api/chat?prompt=hello&character=Kohana"
-
-# Get pure text reply
-curl "https://your-site.netlify.app/api/chat?prompt=hello&character=Kohana&format=text"</code></pre>
-
-          <h4>JavaScript / Fetch</h4>
-          <pre><code>const response = await fetch("https://your-site.netlify.app/api/chat?prompt=Hello&character=Kohana");
-const data = await response.json();
-console.log(data.reply);</code></pre>
-
-          <h4>Python</h4>
-          <pre><code>import requests
-
-res = requests.get("https://your-site.netlify.app/api/chat", params={
-    "prompt": "Hello darling",
-    "character": "Kohana"
-})
-print(res.json()["reply"])</code></pre>
-        </div>
       </div>
     </section>
 
@@ -217,15 +263,15 @@ print(res.json()["reply"])</code></pre>
     <section class="card deploy-card">
       <h2>🚀 Deploying to Netlify & GitHub</h2>
       <ol class="deploy-steps">
-        <li><strong>Push to GitHub:</strong> Initialize git, commit your files, and push to your GitHub repository.</li>
-        <li><strong>Import to Netlify:</strong> Log into <a href="https://app.netlify.com" target="_blank">Netlify</a> &rarr; click <strong>"Add new site"</strong> &rarr; <strong>"Import an existing project"</strong> &rarr; select your GitHub repo.</li>
-        <li><strong>Deploy Settings:</strong> Netlify will automatically detect <code>netlify.toml</code>. Click <strong>Deploy</strong>!</li>
-        <li>Your live GET API is instantly online at <code>https://&lt;your-site&gt;.netlify.app/api/chat?prompt=hello</code>!</li>
+        <li><strong>Push to GitHub:</strong> Initialize git, commit, and push to your repo.</li>
+        <li><strong>Import to Netlify:</strong> Log into Netlify &rarr; <strong>Add new site</strong> &rarr; <strong>Import an existing project</strong> &rarr; pick your GitHub repository.</li>
+        <li><strong>Auto-detected Settings:</strong> Netlify detects <code>netlify.toml</code> automatically. Click <strong>Deploy</strong>.</li>
+        <li>Your live API with memory is ready at <code>https://&lt;your-site&gt;.netlify.app/api/chat?prompt=hello</code>!</li>
       </ol>
     </section>
 
     <footer class="footer">
-      <p>&copy; 2026 AI Girl Chat API. Free & Open Source.</p>
+      <p>&copy; 2026 AI Girl Chat API • Free & Open Source</p>
     </footer>
   </div>
 

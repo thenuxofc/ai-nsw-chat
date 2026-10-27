@@ -1,4 +1,6 @@
 const { chatWithCharacter } = require('../../lib/aiService');
+const sessionStore = require('../../lib/sessionStore');
+const { resolveCharacter } = require('../../lib/charactersData');
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -45,7 +47,81 @@ exports.handler = async (event) => {
       };
     }
 
-    // Extract prompt from multiple possible aliases
+    const action = (params.action || '').toLowerCase();
+    const character = params.character || params.char || params.char_id || 'Kohana';
+    const sessionId = params.session_id || params.sessionId || null;
+    const username = params.username || params.user || 'Guest';
+
+    // ACTION 1: Generate / initialize a new session with memory
+    if (action === 'new_session' || action === 'new' || action === 'create_session' || params.new_session === 'true') {
+      const session = sessionStore.createSession({ character, username });
+      return {
+        statusCode: 200,
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify({
+          status: 'success',
+          action: 'new_session_created',
+          session_id: session.sessionId,
+          character: session.character,
+          greeting: session.messages[0]?.content || null,
+          message_count: session.messages.length,
+          created_at: session.createdAt
+        })
+      };
+    }
+
+    // ACTION 2: Get chat history / memory for an existing session
+    if (action === 'history' || action === 'get_memory') {
+      if (!sessionId) {
+        return {
+          statusCode: 400,
+          headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            status: 'error',
+            message: 'Missing "session_id" parameter to retrieve history.'
+          })
+        };
+      }
+      const session = sessionStore.getSession(sessionId);
+      if (!session) {
+        return {
+          statusCode: 404,
+          headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            status: 'error',
+            message: `Session "${sessionId}" not found or expired.`
+          })
+        };
+      }
+      return {
+        statusCode: 200,
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify({
+          status: 'success',
+          session_id: session.sessionId,
+          character: session.character,
+          total_messages: session.messages.length,
+          messages: session.messages
+        })
+      };
+    }
+
+    // ACTION 3: Clear / reset session memory
+    if (action === 'clear' || action === 'reset') {
+      if (sessionId) {
+        sessionStore.clearSession(sessionId);
+      }
+      return {
+        statusCode: 200,
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json; charset=utf-8' },
+        body: JSON.stringify({
+          status: 'success',
+          message: `Memory cleared for session ${sessionId || 'all'}.`
+        })
+      };
+    }
+
+    // NORMAL CHAT REQUEST
     const prompt = params.prompt || params.text || params.message || params.q || '';
     if (!prompt.trim()) {
       return {
@@ -53,14 +129,11 @@ exports.handler = async (event) => {
         headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           status: 'error',
-          message: 'Missing required query parameter "prompt" (or "text" / "message"). Example: /api/chat?prompt=hello&character=Kohana'
+          message: 'Missing required query parameter "prompt". Example: /api/chat?prompt=hello&character=Kohana&session_id=optional'
         })
       };
     }
 
-    const character = params.character || params.char || params.char_id || 'Kohana';
-    const sessionId = params.session_id || params.sessionId || null;
-    const username = params.username || params.user || 'Guest';
     const format = (params.format || '').toLowerCase();
 
     const result = await chatWithCharacter({

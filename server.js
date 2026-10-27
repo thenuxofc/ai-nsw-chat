@@ -88,3 +88,4 @@ server.listen(PORT, () => {
   console.log(`Try GET API: http://localhost:${PORT}/api/chat?prompt=hello&character=Kohana`);
   console.log(`Try Characters API: http://localhost:${PORT}/api/characters`);
 });
+

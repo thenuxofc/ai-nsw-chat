@@ -1,119 +1,118 @@
-# AI Girl Chat - REST GET API 🚀
+# AI Girl Chat - REST GET API with Memory 🚀
 
-A fast, lightweight, and fully working **GET & POST REST API** for AI character chat, built for easy deployment to **Netlify** and **GitHub**.
+A fast, lightweight, and fully working **GET & POST REST API** for AI character chat with **persistent conversation memory**, built for easy deployment to **Netlify** and **GitHub**.
 
 ## 🌟 Key Features
 
 - **Direct GET API**: Chat simply by visiting a URL like `/api/chat?prompt=hello&character=Kohana`.
-- **Preconfigured Characters**: Full support for characters including Kohana, Linda, Miranda, Della Dean, Monica Schultz, Lettie, Ruby Bax, Sarah Wood, and custom characters.
+- **Persistent Conversation Memory**: Continuous memory between messages using `session_id`. The AI remembers previous context, names, and user statements!
+- **Session ID Generation**: Create dedicated session IDs with character greetings via `/api/chat?action=new_session&character=Kohana`.
+- **History & Memory Inspection**: View full message memory anytime with `/api/chat?action=history&session_id=...`.
+- **Preconfigured Characters**: Full support for Kohana, Linda, Miranda, Della Dean, Monica Schultz, Lettie, Ruby Bax, Sarah Wood, and custom characters.
 - **Multiple Output Formats**: Supports clean JSON or raw plain text (`format=text`).
 - **Netlify Ready**: Includes `netlify.toml` and serverless functions (`netlify/functions/chat.js` and `characters.js`).
 - **Zero External Dependencies**: Uses native Node.js (Node 18+), meaning 0-second install and build times on Netlify.
 - **Local Dev Server**: Includes `server.js` to run locally or on any VPS/Node host.
-- **Interactive Web UI**: Test endpoints visually in browser at `/`.
+- **Interactive Web UI**: Test endpoints and chat in real-time in your browser at `/`.
 
 ---
 
-## ⚡ Quick Start: GET API
+## 🧠 How Memory Works
 
-### Basic Request
+### 1. Generate a Session ID
+To start a new conversation with a character and get their greeting:
 ```http
-GET /api/chat?prompt=Hello&character=Kohana
+GET /api/chat?action=new_session&character=Kohana
+```
+**Response:**
+```json
+{
+  "status": "success",
+  "action": "new_session_created",
+  "session_id": "sess_Kohana_afbe9974d87a391f",
+  "character": "Kohana",
+  "greeting": "*Kohana is sitting next to Guest on the couch...*",
+  "message_count": 1,
+  "created_at": 1793080600
+}
 ```
 
-### Full Example with Netlify URL
+### 2. Chat with Memory
+Send your message and include the `session_id`:
+```http
+GET /api/chat?prompt=My+name+is+Alex+and+I+like+coffee&session_id=sess_Kohana_afbe9974d87a391f
 ```
-https://<your-netlify-site>.netlify.app/api/chat?prompt=How+are+you+doing+today?&character=Kohana
+**Response:**
+```json
+{
+  "status": "success",
+  "session_id": "sess_Kohana_afbe9974d87a391f",
+  "character": "Kohana",
+  "prompt": "My name is Alex and I like coffee",
+  "reply": "*Kohana smiles softly* It's lovely to meet you Alex. I can make some fresh coffee for us anytime!",
+  "message_count": 3
+}
 ```
 
-### Query Parameters
+### 3. Verify Memory Recall
+In the next message, ask a question about what you previously mentioned:
+```http
+GET /api/chat?prompt=What+is+my+name+and+what+do+I+like?&session_id=sess_Kohana_afbe9974d87a391f
+```
+The character will recall:
+> *"You're Alex, and you told me you like coffee! I didn't forget."*
+
+---
+
+## ⚡ API Endpoints & Query Parameters
+
+### Base Chat Endpoint
+```http
+GET /api/chat?prompt={message}&character={name}&session_id={id}
+```
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `prompt` | `string` | **Yes** | Your message to the character. (Aliases: `text`, `message`, `q`) |
 | `character` | `string` | No | Character name or ID. Default: `Kohana`. (Aliases: `char`, `char_id`) |
 | `session_id` | `string` | No | Session identifier to preserve context between messages. |
+| `action` | `string` | No | Special actions: `new_session`, `history`, or `clear`. |
 | `username` | `string` | No | Name the character calls you. Default: `Guest`. |
 | `format` | `string` | No | `json` (default) or `text` (returns raw text response for bots/scripts). |
 
----
+### Special Actions
 
-## 📦 Example Responses
-
-### JSON Response (Default)
-`GET /api/chat?prompt=Hi+Kohana&character=Kohana`
-
-```json
-{
-  "status": "success",
-  "character": "Kohana",
-  "character_id": "Kohana",
-  "prompt": "Hi Kohana",
-  "reply": "*Kohana looks into Guest's eyes with a warm, sincere gaze.* \"I was thinking we could celebrate with a little trip. Somewhere you've always wanted to go. What do you say, darling?\"",
-  "session_id": "sess_d9603934ac11c758b41c",
-  "avatar": "https://loveimages.b-cdn.net/characters/Kohana/icon/f13acc8052570b13217e33537415f121888e41b9eddba937efd2bfff1b7254b1.jpg",
-  "model": "mistralai/mistral-nemo",
-  "created": 1793080587
-}
-```
-
-### Raw Plain Text Response
-`GET /api/chat?prompt=Hi&character=Kohana&format=text`
-
-```text
-*Kohana smiles warmly* "Hello sweetie! What would you like to do today?"
-```
-
----
-
-## 👩 Supported Characters
-
-Call `GET /api/characters` to list all characters or pass their names in the `character` query parameter:
-
-1. **Kohana** (`character=Kohana`) - Sweet, caring stepmom.
-2. **Linda** (`character=Linda`) - Mother dressing up to feel desired.
-3. **Miranda | Futa Gang** (`character=miranda-futa-gang`) - Dominant party character.
-4. **Della Dean** (`character=della-dean`) - Socially awkward stepsister.
-5. **Monica Schultz** (`character=monica-schultz`) - Roommate / gender-bender companion.
-6. **Lettie** (`character=lettie`) - Playful stepsister.
-7. **Ruby Bax** (`character=ruby-bax`) - Teacher secret roleplay.
-8. **Sarah Wood** (`character=sarah-wood`) - Timid, trembling girl.
+- **New Session**: `GET /api/chat?action=new_session&character=Kohana`
+- **View Memory History**: `GET /api/chat?action=history&session_id=<your_session_id>`
+- **Clear Memory**: `GET /api/chat?action=clear&session_id=<your_session_id>`
+- **List Characters**: `GET /api/characters`
 
 ---
 
 ## 💻 Local Development
 
-1. Clone or open this folder:
-   ```bash
-   git clone <your-repo-url>
-   cd ai-chat-slut
-   ```
-
-2. Start the local server:
+1. Start the local server:
    ```bash
    npm start
    ```
 
-3. Open your browser:
+2. Open your browser:
    - Web UI & Live Tester: [http://localhost:3000](http://localhost:3000)
-   - Test GET API: [http://localhost:3000/api/chat?prompt=hello&character=Kohana](http://localhost:3000/api/chat?prompt=hello&character=Kohana)
+   - Test GET API with Memory: [http://localhost:3000/api/chat?prompt=hello&character=Kohana](http://localhost:3000/api/chat?prompt=hello&character=Kohana)
    - Characters List: [http://localhost:3000/api/characters](http://localhost:3000/api/characters)
 
 ---
 
 ## 🚀 How to Deploy to Netlify (Step-by-Step)
 
-### Step 1: Push Code to GitHub
+### Step 1: Commit and Push to GitHub
 ```bash
-git init
 git add .
-git commit -m "Initial commit of AI Girl Chat GET API"
-git branch -M main
-git remote add origin https://github.com/<your-username>/<your-repo-name>.git
+git commit -m "feat: add conversational memory and session generation"
 git push -u origin main
 ```
 
-### Step 2: Deploy on Netlify
+### Step 2: Connect to Netlify
 1. Go to [Netlify Dashboard](https://app.netlify.com).
 2. Click **"Add new site"** &rarr; **"Import an existing project"**.
 3. Select **GitHub** and choose your repository.
@@ -121,45 +120,7 @@ git push -u origin main
    - **Publish directory:** `public`
    - **Functions directory:** `netlify/functions`
 5. Click **"Deploy site"**.
-6. That's it! Your site will be live at `https://<site-name>.netlify.app/api/chat?prompt=hello`.
-
----
-
-## 🛠 Integration Code Snippets
-
-### cURL
-```bash
-# JSON output
-curl "https://your-site.netlify.app/api/chat?prompt=hello&character=Kohana"
-
-# Plain text output
-curl "https://your-site.netlify.app/api/chat?prompt=hello&character=Kohana&format=text"
-```
-
-### JavaScript / Browser / Node.js
-```javascript
-const response = await fetch("https://your-site.netlify.app/api/chat?prompt=Hello&character=Kohana");
-const data = await response.json();
-console.log(data.reply);
-```
-
-### Python
-```python
-import requests
-
-res = requests.get("https://your-site.netlify.app/api/chat", params={
-    "prompt": "Hello sweetheart",
-    "character": "Kohana"
-})
-print(res.json()["reply"])
-```
-
-### Discord / Telegram Bot (Webhook / Web GET)
-Simply use the `format=text` parameter:
-```
-https://your-site.netlify.app/api/chat?prompt=hey&character=Kohana&format=text
-```
-It returns directly the message string, perfect for bots without needing to parse JSON.
+6. Your live API with memory is online at `https://<site-name>.netlify.app/api/chat?prompt=hello`!
 
 ---
 
