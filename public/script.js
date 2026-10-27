@@ -1,10 +1,10 @@
-
 // Global State
 let characters = [];
 let activeCharacter = null;
 let currentSessionId = '';
 let messageHistory = [];
 let isGenerating = false;
+let currentUserName = localStorage.getItem('ai_user_name') || 'Guest';
 
 // Proxy CDN image URLs to bypass 403 Forbidden hotlink blocks
 function formatAvatarUrl(url) {
@@ -18,9 +18,21 @@ function formatAvatarUrl(url) {
 
 // Initialize on DOM load
 document.addEventListener('DOMContentLoaded', async () => {
+  updateUserNameUi();
   await loadCharacters();
   initEventListeners();
 });
+
+// Update username indicators in UI
+function updateUserNameUi() {
+  const pillEl = document.getElementById('user-display-pill-name');
+  const tagEl = document.getElementById('input-username-tag');
+  const apiUserEl = document.getElementById('api-user-input');
+
+  if (pillEl) pillEl.textContent = currentUserName;
+  if (tagEl) tagEl.textContent = currentUserName;
+  if (apiUserEl) apiUserEl.value = currentUserName;
+}
 
 // Load characters from API
 async function loadCharacters() {
@@ -73,9 +85,9 @@ async function loadCharacters() {
 
   // Populate UI views
   renderSidebarList();
-  populateMobileDropdown();
   populateApiDropdown();
   renderGallery();
+  renderMobileDrawerList();
 
   // Set active character to first
   if (characters.length > 0) {
@@ -108,17 +120,45 @@ function renderSidebarList() {
   });
 }
 
-// Populate mobile selector dropdown
-function populateMobileDropdown() {
-  const select = document.getElementById('mobile-char-dropdown');
-  if (!select) return;
-  select.innerHTML = '';
+// Render mobile sliding drawer character list (matching desktop cards)
+function renderMobileDrawerList() {
+  const container = document.getElementById('mobile-drawer-char-list');
+  if (!container) return;
+
+  container.innerHTML = '';
   characters.forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c.id;
-    opt.textContent = c.name;
-    select.appendChild(opt);
+    const item = document.createElement('div');
+    const isActive = activeCharacter && activeCharacter.id === c.id;
+    item.className = `drawer-char-item ${isActive ? 'active' : ''}`;
+    item.onclick = () => {
+      selectCharacter(c.id);
+      closeMobileDrawer();
+    };
+
+    item.innerHTML = `
+      <img class="drawer-char-avatar" src="${formatAvatarUrl(c.avatar)}" alt="${c.name}" onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(c.name)}'">
+      <div class="drawer-char-info">
+        <div class="drawer-char-name-row">
+          <div class="drawer-char-name">${c.name}</div>
+          ${isActive ? '<span class="badge live-badge">Active</span>' : ''}
+        </div>
+        <div class="drawer-char-desc">${c.description}</div>
+      </div>
+    `;
+    container.appendChild(item);
   });
+}
+
+// Mobile drawer open / close controls
+function openMobileDrawer() {
+  renderMobileDrawerList();
+  const drawer = document.getElementById('mobile-chars-drawer');
+  if (drawer) drawer.classList.add('open');
+}
+
+function closeMobileDrawer(e) {
+  const drawer = document.getElementById('mobile-chars-drawer');
+  if (drawer) drawer.classList.remove('open');
 }
 
 // Populate API builder dropdown
@@ -142,7 +182,7 @@ function renderGallery() {
 
   characters.forEach(c => {
     const card = document.createElement('div');
-    card.className = 'gallery-card';
+    card.className = 'gallery-card apple-glass-card';
     card.innerHTML = `
       <div class="gallery-media">
         <img src="${formatAvatarUrl(c.avatar)}" alt="${c.name}" onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(c.name)}'">
@@ -157,11 +197,17 @@ function renderGallery() {
         <div class="gallery-tags">
           ${(c.tags || []).slice(0, 3).map(t => `<span class="tag-pill">${t}</span>`).join('')}
         </div>
-        <button class="btn btn-sm btn-accent w-100" onclick="selectCharacter('${c.id}'); switchTab('chat-view')">Start Chatting</button>
+        <button class="apple-btn apple-btn-primary btn-sm w-100" onclick="selectCharacterAndChat('${c.id}')">Start Chatting</button>
       </div>
     `;
     container.appendChild(card);
   });
+}
+
+// Select character and open chat
+function selectCharacterAndChat(charId) {
+  selectCharacter(charId);
+  openChatWithOnboarding();
 }
 
 // Switch active character
@@ -178,22 +224,18 @@ async function selectCharacter(charId, resetHistory = true) {
 
   // Update dynamic favicon
   const fav = document.getElementById('dynamic-favicon');
-  if (fav) fav.href = char.avatar;
+  if (fav) fav.href = formatAvatarUrl(char.avatar);
 
-  // Update active state in sidebar
+  // Update active state in desktop sidebar
   document.querySelectorAll('.sidebar-char-item').forEach(el => el.classList.remove('active'));
   const activeEl = document.getElementById(`sidebar-item-${char.id.replace(/[^a-zA-Z0-9]/g, '_')}`);
   if (activeEl) activeEl.classList.add('active');
-
-  // Sync mobile dropdown
-  const mobSelect = document.getElementById('mobile-char-dropdown');
-  if (mobSelect) mobSelect.value = char.id;
 
   // Sync API dropdown
   const apiSelect = document.getElementById('api-char-select');
   if (apiSelect) apiSelect.value = char.id;
 
-  // Initialize or reset session
+  // Initialize or reset session with user name
   if (resetHistory || !currentSessionId) {
     await initNewSession(char.id);
   }
@@ -201,18 +243,14 @@ async function selectCharacter(charId, resetHistory = true) {
   updateLiveUrl();
 }
 
-function onMobileCharChange(charId) {
-  selectCharacter(charId);
-}
-
 function syncApiCharacter(charId) {
   selectCharacter(charId, false);
 }
 
-// Initialize a new session with character greeting
+// Initialize a new session with character greeting and user name
 async function initNewSession(charId) {
   try {
-    const res = await fetch(`/api/chat?action=new_session&character=${encodeURIComponent(charId)}`);
+    const res = await fetch(`/api/chat?action=new_session&character=${encodeURIComponent(charId)}&username=${encodeURIComponent(currentUserName)}`);
     const data = await res.json();
     
     currentSessionId = data.session_id || `sess_${charId}_${Date.now()}`;
@@ -228,12 +266,13 @@ async function initNewSession(charId) {
 
     updateSessionUi();
     renderChatMessages();
-    showToast(`New session started with ${activeCharacter.name}`);
+    showToast(`New session with ${activeCharacter.name}`);
   } catch (err) {
     currentSessionId = `sess_${charId}_${Date.now()}`;
+    const rawGreeting = activeCharacter.greeting || `*${activeCharacter.name} smiles warmly at {{user}}.* Hello!`;
     messageHistory = [{
       role: 'assistant',
-      content: activeCharacter.greeting || `*${activeCharacter.name} smiles warmly at you.* Hello!`,
+      content: rawGreeting.replace(/\{\{user\}\}/g, currentUserName).replace(/\{\{char\}\}/g, activeCharacter.name),
       timestamp: formatTime(new Date())
     }];
     updateSessionUi();
@@ -261,9 +300,15 @@ function updateSessionUi() {
   updateLiveUrl();
 }
 
-// Format message text: converts *action text* into stylized italic spans
+// Clean and format message content: removes stray backticks & highlights *roleplay actions*
 function formatMessageContent(rawText) {
-  const escaped = (rawText || '')
+  let clean = (rawText || '').trim();
+  
+  // Strip outer / stray backticks from model completion
+  clean = clean.replace(/^`+|`+$/g, '').trim();
+  clean = clean.replace(/`\*/g, '*').replace(/\*`/g, '*');
+
+  const escaped = clean
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
@@ -279,7 +324,7 @@ function renderChatMessages() {
 
   container.innerHTML = `
     <div class="chat-timestamp-divider">
-      <span>Today • Conversation Started</span>
+      <span>Today • Conversation Thread</span>
     </div>
   `;
 
@@ -290,9 +335,9 @@ function renderChatMessages() {
 
     const avatarUrl = isAssistant
       ? formatAvatarUrl(activeCharacter.avatar)
-      : 'https://api.dicebear.com/7.x/identicon/svg?seed=Guest';
+      : `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(currentUserName)}`;
 
-    const authorName = isAssistant ? activeCharacter.name : 'You';
+    const authorName = isAssistant ? activeCharacter.name : currentUserName;
 
     row.innerHTML = `
       <img class="bubble-avatar" src="${avatarUrl}" alt="${authorName}">
@@ -343,7 +388,7 @@ async function submitUserChat() {
   scrollToChatBottom();
 
   try {
-    const url = `/api/chat?prompt=${encodeURIComponent(prompt)}&character=${encodeURIComponent(activeCharacter.id)}&session_id=${encodeURIComponent(currentSessionId)}`;
+    const url = `/api/chat?prompt=${encodeURIComponent(prompt)}&character=${encodeURIComponent(activeCharacter.id)}&session_id=${encodeURIComponent(currentSessionId)}&username=${encodeURIComponent(currentUserName)}`;
     const res = await fetch(url);
     const data = await res.json();
 
@@ -409,11 +454,70 @@ function switchTab(tabId) {
   }
 }
 
-// API Builder Live URL Generator
+// ----------------------------------------------------
+// USER ONBOARDING & NAME MANAGEMENT
+// ----------------------------------------------------
+function openChatWithOnboarding() {
+  const saved = localStorage.getItem('ai_user_name');
+  if (!saved || saved === 'Guest') {
+    promptChangeUserName(true);
+  } else {
+    switchTab('chat-view');
+  }
+}
+
+function promptChangeUserName(switchToChatAfter = false) {
+  const modal = document.getElementById('username-modal');
+  const input = document.getElementById('user-display-name-input');
+  if (input) input.value = currentUserName === 'Guest' ? '' : currentUserName;
+  if (modal) {
+    modal.classList.add('open');
+    modal.setAttribute('data-switch-to-chat', switchToChatAfter ? 'true' : 'false');
+    setTimeout(() => input?.focus(), 150);
+  }
+}
+
+function closeUsernameModal() {
+  const modal = document.getElementById('username-modal');
+  if (modal) modal.classList.remove('open');
+}
+
+function handleUsernameKeydown(e) {
+  if (e.key === 'Enter') {
+    saveUserCustomName();
+  }
+}
+
+async function saveUserCustomName(fallback = null) {
+  const input = document.getElementById('user-display-name-input');
+  let chosen = fallback || input.value.trim();
+  if (!chosen) chosen = 'Guest';
+
+  currentUserName = chosen;
+  localStorage.setItem('ai_user_name', chosen);
+
+  updateUserNameUi();
+  closeUsernameModal();
+  showToast(`Name set to "${chosen}"`);
+
+  // Reinitialize session with this name so character addresses them
+  if (activeCharacter) {
+    await initNewSession(activeCharacter.id);
+  }
+
+  const modal = document.getElementById('username-modal');
+  if (modal && modal.getAttribute('data-switch-to-chat') === 'true') {
+    switchTab('chat-view');
+  }
+}
+
+// ----------------------------------------------------
+// API BUILDER & UTILITIES
+// ----------------------------------------------------
 function getApiBuilderUrl() {
   const char = document.getElementById('api-char-select')?.value || 'Kohana';
   const prompt = document.getElementById('api-prompt-input')?.value || 'Hello';
-  const user = document.getElementById('api-user-input')?.value || 'Guest';
+  const user = document.getElementById('api-user-input')?.value || currentUserName;
   const format = document.getElementById('api-format-select')?.value || 'json';
   const sid = currentSessionId || document.getElementById('api-session-input')?.value || '';
 
@@ -497,7 +601,6 @@ function copyModalMemory() {
   copyToClipboard(text, 'Memory JSON copied!');
 }
 
-// Utility Helpers
 function copyFullApiUrl() {
   copyToClipboard(getApiBuilderUrl(), 'API URL copied to clipboard!');
 }
@@ -508,7 +611,7 @@ function copySessionId() {
 
 function copyGetUrlForCurrent() {
   const origin = window.location.origin || 'https://thenuxaislut.netlify.app';
-  const url = `${origin}/api/chat?prompt=hello&character=${encodeURIComponent(activeCharacter.id)}&session_id=${encodeURIComponent(currentSessionId)}`;
+  const url = `${origin}/api/chat?prompt=hello&character=${encodeURIComponent(activeCharacter.id)}&session_id=${encodeURIComponent(currentSessionId)}&username=${encodeURIComponent(currentUserName)}`;
   copyToClipboard(url, 'GET URL copied!');
 }
 
@@ -528,7 +631,6 @@ function showToast(msg) {
   else toast.textContent = msg;
   toast.classList.add('show');
   
-  // Haptic feedback if supported
   if ('vibrate' in navigator) {
     try { navigator.vibrate(12); } catch (e) {}
   }
@@ -541,7 +643,6 @@ function formatTime(d) {
 }
 
 function initEventListeners() {
-  // Auto-resize chat textarea as user types
   const tx = document.getElementById('chat-input-text');
   if (tx) {
     tx.addEventListener('input', function() {
@@ -550,9 +651,8 @@ function initEventListeners() {
     });
   }
 
-  // Apple tactile button press feedback
   document.addEventListener('click', (e) => {
-    const btn = e.target.closest('.apple-btn, .segmented-btn, .apple-chip, .sidebar-char-item, .apple-send-btn');
+    const btn = e.target.closest('.apple-btn, .segmented-btn, .apple-chip, .sidebar-char-item, .apple-send-btn, .drawer-char-item');
     if (btn && 'vibrate' in navigator) {
       try { navigator.vibrate(10); } catch (err) {}
     }
