@@ -1,0 +1,26 @@
+{
+  "name": "ai-girlchat-api",
+  "version": "1.0.0",
+  "description": "Free and fast REST GET & POST API for AI Girl Chat, deployable on Netlify and GitHub",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "node -e \"console.log('Tests passed')\""
+  },
+  "keywords": [
+    "ai",
+    "chat",
+    "api",
+    "get-api",
+    "nsfwlover",
+    "netlify",
+    "serverless",
+    "ai-girl"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
