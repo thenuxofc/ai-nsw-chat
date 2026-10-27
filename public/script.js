@@ -123,6 +123,8 @@ function renderSidebarList() {
 // Render mobile sliding drawer character list (matching desktop cards)
 function renderMobileDrawerList() {
   const container = document.getElementById('mobile-drawer-char-list');
+  const countEl = document.getElementById('mobile-drawer-count');
+  if (countEl) countEl.textContent = characters.length;
   if (!container) return;
 
   container.innerHTML = '';
@@ -140,7 +142,7 @@ function renderMobileDrawerList() {
       <div class="drawer-char-info">
         <div class="drawer-char-name-row">
           <div class="drawer-char-name">${c.name}</div>
-          ${isActive ? '<span class="badge live-badge">Active</span>' : ''}
+          ${isActive ? '<span class="badge live-badge">Active</span>' : '<span class="badge online-badge">Online</span>'}
         </div>
         <div class="drawer-char-desc">${c.description}</div>
       </div>
@@ -304,9 +306,12 @@ function updateSessionUi() {
 function formatMessageContent(rawText) {
   let clean = (rawText || '').trim();
   
-  // Strip outer / stray backticks from model completion
-  clean = clean.replace(/^`+|`+$/g, '').trim();
+  // Clean backticks wrapping asterisks: `*action*` -> *action*
+  clean = clean.replace(/`\*([^*]+)\*`/g, '*$1*');
+  // Strip outer / stray backticks
   clean = clean.replace(/`\*/g, '*').replace(/\*`/g, '*');
+  clean = clean.replace(/^`+|`+$/g, '').trim();
+  clean = clean.replace(/`/g, '');
 
   const escaped = clean
     .replace(/&/g, '&amp;')
@@ -448,6 +453,11 @@ function switchTab(tabId) {
   });
 
   if (tabId === 'chat-view') {
+    const hasPrompted = localStorage.getItem('ai_user_name_prompted');
+    const saved = localStorage.getItem('ai_user_name');
+    if (!hasPrompted && (!saved || saved === 'Guest')) {
+      promptChangeUserName(false);
+    }
     scrollToChatBottom();
   } else if (tabId === 'api-view') {
     updateLiveUrl();
@@ -480,6 +490,7 @@ function promptChangeUserName(switchToChatAfter = false) {
 function closeUsernameModal() {
   const modal = document.getElementById('username-modal');
   if (modal) modal.classList.remove('open');
+  localStorage.setItem('ai_user_name_prompted', 'true');
 }
 
 function handleUsernameKeydown(e) {
@@ -490,11 +501,12 @@ function handleUsernameKeydown(e) {
 
 async function saveUserCustomName(fallback = null) {
   const input = document.getElementById('user-display-name-input');
-  let chosen = fallback || input.value.trim();
+  let chosen = fallback || (input ? input.value.trim() : '');
   if (!chosen) chosen = 'Guest';
 
   currentUserName = chosen;
   localStorage.setItem('ai_user_name', chosen);
+  localStorage.setItem('ai_user_name_prompted', 'true');
 
   updateUserNameUi();
   closeUsernameModal();

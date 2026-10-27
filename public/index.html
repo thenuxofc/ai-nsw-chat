@@ -301,8 +301,8 @@
             </div>
 
             <!-- Mobile Characters Drawer Trigger Button -->
-            <button class="apple-btn apple-btn-secondary btn-sm mobile-only" onclick="openMobileDrawer()" title="Switch Companion">
-              <span>👩 Girls</span>
+            <button class="apple-btn apple-btn-primary btn-sm mobile-only" onclick="openMobileDrawer()" title="Switch Companion">
+              <span>👩 Girls (8)</span>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </button>
 
@@ -455,9 +455,15 @@
     <!-- TAB 3: ALL CHARACTERS GALLERY -->
     <section id="chars-view" class="tab-content-panel">
       <div class="container-narrow custom-scroll">
-        <div class="panel-header">
-          <h2>👩 Available AI Companions</h2>
-          <p class="panel-sub">Select any companion to start chatting or copy their name for your API calls.</p>
+        <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <h2>👩 Available AI Companions</h2>
+            <p class="panel-sub">Select any companion to start chatting or copy their name for your API calls.</p>
+          </div>
+          <button class="apple-btn apple-btn-secondary btn-sm" onclick="switchTab('chat-view')" title="Return to Chat">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span>✕ Close & Return to Chat</span>
+          </button>
         </div>
 
         <div class="characters-masonry" id="gallery-container">
@@ -578,9 +584,9 @@ console.log(data.reply);</code></pre>
       <div class="drawer-header">
         <div class="drawer-title-row">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          <h3>Choose Companion</h3>
+          <h3>Choose Companion (<span id="mobile-drawer-count">8</span>)</h3>
         </div>
-        <button class="apple-btn apple-btn-secondary btn-xs drawer-close-btn" onclick="closeMobileDrawer()">
+        <button class="apple-btn apple-btn-primary btn-sm drawer-close-btn" onclick="closeMobileDrawer()">
           <span>✕ Close</span>
         </button>
       </div>
